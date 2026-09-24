@@ -117,7 +117,7 @@
   };
 
   const setTheme = (mode) => {
-    const next = mode === 'light' ? 'light' : 'dark';
+    const next = mode || 'dark';
     const state = loadState();
     state.settings.theme = next;
     saveState(state);
@@ -133,6 +133,60 @@
       themeButton.innerHTML = next === 'dark'
         ? '<span aria-hidden="true">◐</span><span>Theme</span>'
         : '<span aria-hidden="true">☀</span><span>Light</span>';
+    }
+  };
+
+  const syncFromGoogleSheet = async () => {
+    const state = loadState();
+    const url = String(state.settings.syncUrl || '').trim();
+    const status = document.getElementById('syncStatus');
+    const button = document.getElementById('syncButton');
+
+    if (!url) {
+      showToast('Add the Apps Script URL in Settings.', true);
+      return;
+    }
+
+    if (button) button.disabled = true;
+    if (status) {
+      status.textContent = 'Syncing…';
+      status.dataset.status = 'loading';
+    }
+
+    try {
+      const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}action=getAll`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result || !result.ok || !result.data) {
+        throw new Error(result && result.error ? result.error : `Sync failed (${response.status})`);
+      }
+
+      const next = loadState();
+      next.transactions = Array.isArray(result.data.transactions) ? result.data.transactions : next.transactions;
+      next.categories = Array.isArray(result.data.categories) && result.data.categories.length ? result.data.categories : next.categories;
+      next.budgets = Array.isArray(result.data.budgets) ? result.data.budgets : next.budgets;
+      next.loans = Array.isArray(result.data.loans) ? result.data.loans : next.loans;
+      next.settings = next.settings || {};
+      next.settings.syncUrl = url;
+      saveState(next);
+
+      renderAll();
+      if (status) {
+        status.textContent = 'Synced';
+        status.dataset.status = 'success';
+      }
+      showToast('Data loaded from Google Sheets.');
+    } catch (error) {
+      if (status) {
+        status.textContent = 'Sync failed';
+        status.dataset.status = 'error';
+      }
+      showToast(error.message || 'Unable to load Google Sheets data.', true);
+    } finally {
+      if (button) button.disabled = false;
     }
   };
 
@@ -216,11 +270,9 @@
     const cashflowValue = document.getElementById('cashflowValue');
     const budgetUsedValue = document.getElementById('budgetUsedValue');
     const loanBalanceValue = document.getElementById('loanBalanceValue');
-    const loanCountValue = document.getElementById('loanCountValue');
     if (cashflowValue) cashflowValue.textContent = money(net);
     if (budgetUsedValue) budgetUsedValue.textContent = money(expense);
     if (loanBalanceValue) loanBalanceValue.textContent = money(state.loans.reduce((sum, loan) => sum + safeNumber(loan.balance), 0));
-    if (loanCountValue) loanCountValue.textContent = String(state.loans.length);
 
     const failedBudgets = state.budgets.filter((budget) => budget.month === month).map((budget) => {
       const spent = state.transactions.filter((tx) => tx.date?.slice(0, 7) === month && tx.type === 'expense' && tx.category === budget.category).reduce((sum, tx) => sum + safeNumber(tx.amount), 0);
@@ -230,7 +282,7 @@
     const budgetAlerts = document.getElementById('budgetAlerts');
     if (budgetAlerts) {
       if (!failedBudgets.length) {
-        budgetAlerts.innerHTML = '<div class="empty-state">No alerts for this month.</div>';
+        budgetAlerts.innerHTML = '<div class=\"empty-state\">No alerts for this month.</div>';
       } else {
         budgetAlerts.innerHTML = failedBudgets.map((row) => `<div class="settings-item"><div class="meta"><strong>${esc(row.category)}</strong><small>${money(row.spent)} spent of ${money(row.budget)}</small></div><div class="quick-action-row"><button type="button" class="secondary-btn">Alert</button></div></div>`).join('');
       }
@@ -250,7 +302,7 @@
     });
 
     if (!rows.length) {
-      tracker.innerHTML = '<div class="empty-state">No budget rows for this month.</div>';
+      tracker.innerHTML = '<div class=\"empty-state\">No budget rows for this month.</div>';
       return;
     }
 
@@ -272,7 +324,7 @@
     const container = document.getElementById('loanList');
     if (!container) return;
     if (!state.loans.length) {
-      container.innerHTML = '<div class="empty-state">No loan records yet.</div>';
+      container.innerHTML = '<div class=\"empty-state\">No loan records yet.</div>';
       return;
     }
     container.innerHTML = state.loans.map((loan) => `
@@ -289,17 +341,17 @@
     const tbody = document.getElementById('transactionTable');
     if (!tbody) return;
     if (!state.transactions.length) {
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No transactions yet.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan=\"6\"><div class=\"empty-state\">No transactions yet.</div></td></tr>';
       return;
     }
     tbody.innerHTML = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).map((tx) => `
       <tr>
         <td>${fmtDate(tx.date)}</td>
-        <td><span class="pill ${esc(tx.type === 'expense' ? 'expense' : 'income')}">${esc(tx.type)}</span></td>
+        <td><span class=\"pill ${esc(tx.type === 'expense' ? 'expense' : 'income')}\">${esc(tx.type)}</span></td>
         <td>${esc(tx.category || 'General')}</td>
         <td>${esc(money(tx.amount))}</td>
         <td>${esc(tx.note || '—')}</td>
-        <td><button type="button" class="remove-btn" data-remove-tx="${esc(tx.id)}">Delete</button></td>
+        <td><button type=\"button\" class=\"remove-btn\" data-remove-tx=\"${esc(tx.id)}\">Delete</button></td>
       </tr>
     `).join('');
   };
@@ -310,7 +362,7 @@
     if (!container) return;
     const actions = state.settings.quickActions || [];
     container.innerHTML = actions.map((action) => `
-      <button type="button" class="quick-action" data-quick-action="${esc(action.id)}">
+      <button type=\"button\" class=\"quick-action\" data-quick-action=\"${esc(action.id)}\">
         <strong>${esc(action.label)}</strong>
         <small>${esc(action.type)} · ${esc(action.category)}</small>
       </button>
@@ -318,15 +370,15 @@
 
     const settingsHost = document.getElementById('quickActionSettings');
     if (settingsHost) {
-      settingsHost.innerHTML = actions.map((action) => `
+      settingsHost.innerHTML = actions.map((action, index) => `
         <div class="settings-item">
           <div class="meta">
             <strong>${esc(action.label)}</strong>
             <small>${esc(action.type)} • ${esc(action.category)}</small>
           </div>
           <div class="quick-action-row">
-            <button type="button" class="secondary-btn" data-edit-quick="${esc(action.id)}">Edit</button>
-            <button type="button" class="danger-btn" data-remove-quick="${esc(action.id)}">Remove</button>
+            <button type=\"button\" class=\"secondary-btn\" data-edit-quick=\"${esc(action.id)}\">Edit</button>
+            <button type=\"button\" class=\"danger-btn\" data-remove-quick=\"${esc(action.id)}\">Remove</button>
           </div>
         </div>
       `).join('');
@@ -338,7 +390,7 @@
     const container = document.getElementById('budgetList');
     if (!container) return;
     if (!state.budgets.length) {
-      container.innerHTML = '<div class="empty-state">No budgets yet.</div>';
+      container.innerHTML = '<div class=\"empty-state\">No budgets yet.</div>';
       return;
     }
     container.innerHTML = state.budgets.slice().reverse().map((row) => `
@@ -347,7 +399,7 @@
           <strong>${esc(row.category)}</strong>
           <small>${esc(row.month)} · ${money(row.amount)}</small>
         </div>
-        <button type="button" class="remove-btn" data-remove-budget="${esc(row.id)}">Delete</button>
+        <button type=\"button\" class=\"remove-btn\" data-remove-budget=\"${esc(row.id)}\">Delete</button>
       </div>
     `).join('');
   };
@@ -357,7 +409,7 @@
     const container = document.getElementById('categoryList');
     if (!container) return;
     if (!state.categories.length) {
-      container.innerHTML = '<div class="empty-state">No categories yet.</div>';
+      container.innerHTML = '<div class=\"empty-state\">No categories yet.</div>';
       return;
     }
     container.innerHTML = state.categories.map((cat) => `
@@ -366,7 +418,7 @@
           <strong>${esc(cat.name)}</strong>
           <small>${esc(cat.type)}</small>
         </div>
-        <button type="button" class="remove-btn" data-remove-category="${esc(cat.id)}">Delete</button>
+        <button type=\"button\" class=\"remove-btn\" data-remove-category=\"${esc(cat.id)}\">Delete</button>
       </div>
     `).join('');
   };
@@ -390,11 +442,11 @@
     const state = loadState();
     const form = document.getElementById('transactionForm');
     if (!form) return;
-    const typeSelect = form.querySelector('select[name="type"]');
-    const categorySelect = form.querySelector('select[name="category"]');
-    const amountInput = form.querySelector('input[name="amount"]');
-    const noteInput = form.querySelector('input[name="note"]');
-    const repSelect = form.querySelector('select[name="loanId"]');
+    const typeSelect = form.querySelector('select[name=\"type\"]');
+    const categorySelect = form.querySelector('select[name=\"category\"]');
+    const amountInput = form.querySelector('input[name=\"amount\"]');
+    const noteInput = form.querySelector('input[name=\"note\"]');
+    const repSelect = form.querySelector('select[name=\"loanId\"]');
 
     if (typeSelect) typeSelect.value = preset.type || 'expense'; typeSelect.dispatchEvent(new Event('change'));
     if (categorySelect && preset.category) categorySelect.value = preset.category;
@@ -402,7 +454,7 @@
     if (noteInput && preset.note) noteInput.value = preset.note;
     if (repSelect && preset.loanId) repSelect.value = preset.loanId;
 
-    const modalDate = form.querySelector('input[name="date"]');
+    const modalDate = form.querySelector('input[name=\"date\"]');
     if (modalDate && !modalDate.value) modalDate.value = new Date().toISOString().slice(0, 10);
 
     const errorBox = document.getElementById('transactionFormError');
@@ -518,8 +570,8 @@
       repaymentFields.classList.toggle('hidden', !isRepayment);
       const form = modal.querySelector('#transactionForm');
       if (form) {
-        const type = form.querySelector('select[name="type"]');
-        const loanAmount = form.querySelector('input[name="repaymentAmount"]');
+        const type = form.querySelector('select[name=\"type\"]');
+        const loanAmount = form.querySelector('input[name=\"repaymentAmount\"]');
         if (isRepayment) {
           type.value = 'expense';
           form.querySelector('select[name="category"]').value = 'Loan repayment';
@@ -613,15 +665,7 @@
     document.getElementById('floatingAddTransaction')?.addEventListener('click', () => openTransactionForm());
 
     document.getElementById('syncButton')?.addEventListener('click', () => {
-      const state = loadState();
-      const syncUrl = String(state.settings.syncUrl || '').trim();
-
-      if (!syncUrl) {
-        showToast('Add the Apps Script URL in Settings.', true);
-        return;
-      }
-
-      showToast('Sync queued.');
+      syncFromGoogleSheet();
     });
 
     document.getElementById('themeButton')?.addEventListener('click', () => {
@@ -748,6 +792,7 @@
     });
 
     const currentState = loadState();
+
     const syncUrlInput = document.getElementById('syncUrl');
     if (syncUrlInput) {
       syncUrlInput.value = currentState.settings.syncUrl || '';
@@ -785,7 +830,11 @@
 
     menuButton?.addEventListener('click', toggleSidebar);
     sidebarToggle?.addEventListener('click', toggleSidebar);
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') document.body.classList.remove('sidebar-open'); });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') document.body.classList.remove('sidebar-open');
+    });
+
     document.addEventListener('click', (event) => {
       const insideSidebar = event.target.closest('#sidebar');
       const insideButton = event.target.closest('#mobileMenu') || event.target.closest('#sidebarMenuToggle');
