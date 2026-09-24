@@ -54,7 +54,7 @@
 
         <section id="dashboard" class="page">
           <div class="section-title"><small>Insights</small><h1>Budget &amp; loan overview</h1><p>Net cash flow and budget tracking</p></div>
-          <div class="cards"><article class="stat-card panel"><small>Cash flow</small><strong id="cashflowValue">0 MMK</strong></article><article class="stat-card panel"><small>Budget used</small><strong id="budgetUsedValue">0 MMK</strong></article><article class="stat-card panel"><small>Loan balance</small><strong id="loanBalanceValue">0 MMK</strong></article></div>
+          <div class="cards"><article class="stat-card panel"><small>Cash flow</small><strong id="cashflowValue">0 MMK</strong></article><article class="stat-card panel"><small>Budget used</small><strong id="budgetUsedValue">0 MMK</strong></article><article class="stat-card panel"><small>Loan balance</small><strong id="loanBalanceValue">0 MMK</strong></article><article class="stat-card panel"><small>Active loans</small><strong id="loanCountValue">0</strong></article></div>
           <div class="panel"><div class="section-head"><h3>Budget vs spending</h3></div><div id="budgetVsSpendingChart" class="bar-chart"></div></div>
           <div class="panel"><div class="section-head"><h3>Loan summary</h3></div><div id="loanList" class="settings-list"></div></div>
         </section>
@@ -67,12 +67,30 @@
         <section id="settings" class="page">
           <div class="section-title"><small>Customize</small><h1>Settings</h1></div>
           <div class="settings-grid">
-            <div class="panel"><div class="section-head"><h3>Preferences</h3></div><div class="settings-list"><label class="toggle-row"><span>Dark mode</span><input id="darkModeToggle" type="checkbox" checked></label></div></div>
-            <div class="panel"><div class="section-head"><h3>Quick actions</h3></div><div id="quickActionSettings" class="settings-list"></div></div>
+            <div class="panel">
+              <div class="section-head"><h3>Preferences</h3></div>
+              <div class="settings-list">
+                <label class="toggle-row" for="darkModeToggle">
+                  <span>Dark mode</span>
+                  <input id="darkModeToggle" type="checkbox" checked>
+                </label>
+
+                <label class="field" for="syncUrl">
+                  <span>Apps Script URL</span>
+                  <input id="syncUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+                </label>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="section-head"><h3>Quick actions</h3></div>
+              <div id="quickActionSettings" class="settings-list"></div>
+            </div>
           </div>
+
           <div class="settings-grid" style="margin-top:18px">
             <div class="panel"><div class="section-head"><h3>Budget management</h3></div><form id="budgetForm" class="stack-form"><label><span>Category</span><select id="budgetCategory" name="budgetCategory"></select></label><label><span>Month</span><input name="budgetMonth" type="month" required></label><label><span>Amount</span><input name="budgetAmount" type="number" min="1" step="1" required></label><button type="submit" class="primary-btn">Save budget</button></form></div>
-            <div class="panel"><div class="section-head"><h3>Categories</h3></div><form id="categoryForm" class="stack-form"><label><span>Name</span><input name="categoryName" required placeholder="New category"></label><label><span>Type</span><select name="categoryType"><option value="expense">Expense</option><option value="income">Income</option></select></label><button type="submit" class="primary-btn">Add category</button></form></div>
+            <div class="panel"><div class="section-head"><h3>Categories</h3></div><form id="categoryForm" class="stack-form"><label><span>Name</span><input name="categoryName" required placeholder="Category name"></label><label><span>Type</span><select name="categoryType"><option value="expense">Expense</option><option value="income">Income</option></select></label><button type="submit" class="primary-btn">Add category</button></form></div>
           </div>
         </section>
       </main>
@@ -82,6 +100,7 @@
   <button type="button" id="floatingAddTransaction" class="floating-add-transaction" aria-label="Add transaction"><span>＋</span><span>Add transaction</span></button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="js/app.js" defer></script>
+  <script src="js/loan-logic.js" defer></script>
   <script src="js/runtime-fixes.js" defer></script>
   <script src="js/sidebar-nav.js" defer></script>
 </body>
