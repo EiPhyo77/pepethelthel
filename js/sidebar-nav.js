@@ -19,20 +19,29 @@
       if (label) label.textContent = open ? 'Hide menu' : 'Show menu';
     }
   };
-  const toggle = (event) => { event.preventDefault(); event.stopPropagation(); sync(!document.body.classList.contains('sidebar-open')); };
+  const toggle = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    sync(!document.body.classList.contains('sidebar-open'));
+  };
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('#mobileMenu, #sidebarMenuToggle')) toggle(event);
   }, true);
-  sidebar.addEventListener('click', (event) => { if (mobile() && event.target.closest('.nav-item')) sync(false); });
-  document.addEventListener('click', (event) => { if (mobile() && document.body.classList.contains('sidebar-open') && !sidebar.contains(event.target) && !menu.contains(event.target)) sync(false); });
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') sync(false); });
-  window.addEventListener('resize', () => { if (!mobile()) sync(false); }, { passive: true });
-  sync(false);
+  sidebar.addEventListener('click', (event) => {
+    if (mobile() && event.target.closest('.nav-item')) sync(false);
+  });
+  document.addEventListener('click', (event) => {
+    if (mobile() && document.body.classList.contains('sidebar-open') && !sidebar.contains(event.target) && !menu.contains(event.target)) {
+      sync(false);
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') sync(false);
+  });
+  window.addEventListener('resize', () => {
+    if (!mobile()) sync(false);
+  }, { passive: true });
 
-  // Keep the compatibility fixes isolated from the existing app bundle.
-  const fixes = document.createElement('script');
-  fixes.src = 'js/app-fixes.js';
-  fixes.defer = true;
-  document.head.appendChild(fixes);
+  sync(false);
 })();
