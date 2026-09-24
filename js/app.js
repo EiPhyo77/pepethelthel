@@ -43,7 +43,9 @@
   const safeNumber = (value) => Number(String(value ?? '0').replace(/,/g, '')) || 0;
   const money = (value) => `${Math.round(safeNumber(value)).toLocaleString('en-US')} MMK`;
   const fmtDate = (value) => {
-    if (!value) return ''; const d = new Date(value + 'T12:00:00'); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!value) return '';
+    const d = new Date(value + 'T12:00:00');
+    return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
   const monthStamp = (date = new Date()) => date.toISOString().slice(0, 7);
   const monthDays = (month = monthStamp()) => new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
@@ -97,7 +99,7 @@
     style.id = 'moneyflow-runtime-style';
     style.textContent = `
       .empty-state { color: var(--muted); padding: 14px 12px; border: 1px dashed var(--line); border-radius: 12px; }
-      .settings-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background: rgba(79,140,255,.04); }
+      .settings-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background: rgba(79,140,255,.08); }
       .settings-item .meta { display:grid; gap:4px; }
       .settings-item strong { font-size: .95rem; }
       .settings-item small { color: var(--muted); }
@@ -115,13 +117,23 @@
   };
 
   const setTheme = (mode) => {
-    const next = mode || 'dark';
+    const next = mode === 'light' ? 'light' : 'dark';
     const state = loadState();
     state.settings.theme = next;
     saveState(state);
+
     document.body.classList.toggle('dark', next === 'dark');
+    document.body.classList.toggle('light', next === 'light');
+
     const darkToggle = document.getElementById('darkModeToggle');
     if (darkToggle) darkToggle.checked = next === 'dark';
+
+    const themeButton = document.getElementById('themeButton');
+    if (themeButton) {
+      themeButton.innerHTML = next === 'dark'
+        ? '<span aria-hidden="true">◐</span><span>Theme</span>'
+        : '<span aria-hidden="true">☀</span><span>Light</span>';
+    }
   };
 
   const monthOptions = () => {
@@ -204,9 +216,11 @@
     const cashflowValue = document.getElementById('cashflowValue');
     const budgetUsedValue = document.getElementById('budgetUsedValue');
     const loanBalanceValue = document.getElementById('loanBalanceValue');
+    const loanCountValue = document.getElementById('loanCountValue');
     if (cashflowValue) cashflowValue.textContent = money(net);
     if (budgetUsedValue) budgetUsedValue.textContent = money(expense);
     if (loanBalanceValue) loanBalanceValue.textContent = money(state.loans.reduce((sum, loan) => sum + safeNumber(loan.balance), 0));
+    if (loanCountValue) loanCountValue.textContent = String(state.loans.length);
 
     const failedBudgets = state.budgets.filter((budget) => budget.month === month).map((budget) => {
       const spent = state.transactions.filter((tx) => tx.date?.slice(0, 7) === month && tx.type === 'expense' && tx.category === budget.category).reduce((sum, tx) => sum + safeNumber(tx.amount), 0);
@@ -218,7 +232,7 @@
       if (!failedBudgets.length) {
         budgetAlerts.innerHTML = '<div class="empty-state">No alerts for this month.</div>';
       } else {
-        budgetAlerts.innerHTML = failedBudgets.map((row) => `<div class="settings-item"><div class="meta"><strong>${esc(row.category)}</strong><small>${money(row.spent)} spent of ${money(row.budget)}</small></div><span class="pill expense">${Math.round(row.ratio)}%</span></div>`).join('');
+        budgetAlerts.innerHTML = failedBudgets.map((row) => `<div class="settings-item"><div class="meta"><strong>${esc(row.category)}</strong><small>${money(row.spent)} spent of ${money(row.budget)}</small></div><div class="quick-action-row"><button type="button" class="secondary-btn">Alert</button></div></div>`).join('');
       }
     }
   };
@@ -304,7 +318,7 @@
 
     const settingsHost = document.getElementById('quickActionSettings');
     if (settingsHost) {
-      settingsHost.innerHTML = actions.map((action, index) => `
+      settingsHost.innerHTML = actions.map((action) => `
         <div class="settings-item">
           <div class="meta">
             <strong>${esc(action.label)}</strong>
@@ -491,7 +505,8 @@
       if (typeSelect.value === 'expense') {
         categorySelect.value = 'Food';
       } else {
-        const incomeCat = getCategoriesByType('income')[0]; if (incomeCat) categorySelect.value = incomeCat.name;
+        const incomeCat = getCategoriesByType('income')[0];
+        if (incomeCat) categorySelect.value = incomeCat.name;
       }
     });
 
@@ -596,14 +611,30 @@
     });
 
     document.getElementById('floatingAddTransaction')?.addEventListener('click', () => openTransactionForm());
-    document.getElementById('syncButton')?.addEventListener('click', () => showToast('Sync queued.'));
+
+    document.getElementById('syncButton')?.addEventListener('click', () => {
+      const state = loadState();
+      const syncUrl = String(state.settings.syncUrl || '').trim();
+
+      if (!syncUrl) {
+        showToast('Add the Apps Script URL in Settings.', true);
+        return;
+      }
+
+      showToast('Sync queued.');
+    });
+
     document.getElementById('themeButton')?.addEventListener('click', () => {
       const state = loadState();
       const next = state.settings.theme === 'dark' ? 'light' : 'dark';
       setTheme(next);
       showToast(`Switched to ${next} mode.`);
     });
-    document.getElementById('darkModeToggle')?.addEventListener('change', (event) => setTheme(event.target.checked ? 'dark' : 'light'));
+
+    document.getElementById('darkModeToggle')?.addEventListener('change', (event) => {
+      setTheme(event.target.checked ? 'dark' : 'light');
+    });
+
     document.getElementById('budgetForm')?.addEventListener('submit', (event) => {
       event.preventDefault();
       const form = event.currentTarget;
@@ -721,14 +752,21 @@
     if (syncUrlInput) {
       syncUrlInput.value = currentState.settings.syncUrl || '';
       syncUrlInput.addEventListener('input', (event) => {
-        const state = loadState(); state.settings.syncUrl = event.target.value; saveState(state);
+        const state = loadState();
+        state.settings.syncUrl = event.target.value.trim();
+        saveState(state);
       });
     }
 
     const darkToggle = document.getElementById('darkModeToggle');
-    if (darkToggle) darkToggle.checked = currentState.settings.theme !== 'light';
-    const savedTheme = currentState.settings.theme || 'dark';
-    setTheme(savedTheme);
+    if (darkToggle) {
+      darkToggle.checked = currentState.settings.theme !== 'light';
+      darkToggle.addEventListener('change', (event) => {
+        setTheme(event.target.checked ? 'dark' : 'light');
+      });
+    }
+
+    setTheme(currentState.settings.theme || 'dark');
   };
 
   const init = () => {
@@ -739,10 +777,12 @@
     setActivePage('home');
     renderAll();
     wireEvents();
+
     const menuButton = document.getElementById('mobileMenu');
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarMenuToggle');
     const toggleSidebar = () => document.body.classList.toggle('sidebar-open');
+
     menuButton?.addEventListener('click', toggleSidebar);
     sidebarToggle?.addEventListener('click', toggleSidebar);
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape') document.body.classList.remove('sidebar-open'); });
