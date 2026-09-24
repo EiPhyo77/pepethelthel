@@ -1,0 +1,396 @@
+/* Focused UI fixes for the responsive navigation and transaction dialog. */
+
+:root {
+  color-scheme: light;
+}
+
+body.dark {
+  color-scheme: dark;
+}
+
+/* Keep navigation actions vertically stacked at every viewport size. */
+.main-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.main-nav .nav-item {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 48px;
+}
+
+/* Make the month selector follow the active light/dark theme. */
+.month-picker {
+  color: var(--muted);
+}
+
+.month-picker select,
+.mini-picker select,
+#settings select,
+#settings input,
+#settings textarea,
+#settings .stack-form select,
+#settings .stack-form input {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 36px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  background-color: var(--surface-solid);
+  color: var(--text);
+  color-scheme: inherit;
+  accent-color: var(--blue);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+body.dark .month-picker select,
+body.dark .mini-picker select,
+body.dark #settings select,
+body.dark #settings input,
+body.dark #settings textarea,
+body.dark #settings .stack-form select,
+body.dark #settings .stack-form input {
+  background-color: rgba(7, 11, 22, 0.72);
+}
+
+.month-picker select:hover,
+.mini-picker select:hover,
+#settings select:hover,
+#settings input:hover,
+#settings textarea:hover,
+#settings .stack-form select:hover,
+#settings .stack-form input:hover {
+  border-color: rgba(79, 140, 255, 0.5);
+}
+
+.month-picker select:focus-visible,
+.mini-picker select:focus-visible,
+#settings select:focus-visible,
+#settings input:focus-visible,
+#settings textarea:focus-visible,
+#settings .stack-form select:focus-visible,
+#settings .stack-form input:focus-visible {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.16);
+}
+
+.month-picker select option,
+.mini-picker select option,
+#settings select option {
+  background: var(--surface-solid);
+  color: var(--text);
+}
+
+body.dark .month-picker select option,
+body.dark .mini-picker select option,
+body.dark #settings select option {
+  background: #0d1424;
+  color: #f2f6ff;
+}
+
+/* Final compact floating add-transaction button */
+.floating-add-transaction {
+  position: fixed;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(16px, 3vw, 32px);
+  width: 64px;
+  height: 64px;
+  min-height: 64px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  z-index: 25;
+  font-size: 0;
+  box-shadow: 0 18px 38px rgba(79, 140, 255, 0.3);
+  transition: transform 0.18s ease, opacity 0.18s ease, visibility 0.18s ease, box-shadow 0.18s ease;
+}
+
+.floating-add-transaction span:first-child {
+  width: auto;
+  height: auto;
+  background: transparent;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.floating-add-transaction span:last-child {
+  display: none;
+}
+
+body.modal-open .floating-add-transaction {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sidebar {
+  color: var(--text);
+  background: linear-gradient(180deg, var(--surface-solid), var(--surface)) !important;
+  border-color: var(--line) !important;
+}
+
+body.dark .sidebar {
+  background: linear-gradient(180deg, rgba(18, 29, 49, 0.96), rgba(10, 16, 30, 0.92)) !important;
+}
+
+.sidebar .nav-item,
+.sidebar .theme-button,
+.sidebar .sidebar-menu-toggle {
+  color: var(--text);
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 4vw, 40px);
+  background: rgba(2, 6, 23, 0.68);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.transaction-modal {
+  width: min(680px, 100%);
+  max-height: min(90vh, 760px);
+  overflow: auto;
+  padding: clamp(20px, 4vw, 32px);
+  color: var(--text);
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+}
+
+body.dark .transaction-modal {
+  background: linear-gradient(145deg, rgba(19, 30, 52, 0.98), rgba(10, 16, 30, 0.98));
+}
+
+.transaction-modal .modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.transaction-modal h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+
+.modal-close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.transaction-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 5px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.transaction-tab {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.transaction-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue), var(--violet));
+  box-shadow: 0 8px 18px rgba(79, 140, 255, 0.2);
+}
+
+.transaction-form-grid,
+.repayment-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.transaction-form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.transaction-modal label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.transaction-modal label > span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.transaction-modal input,
+.transaction-modal select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  background-color: var(--surface-solid);
+  color: var(--text);
+}
+
+body.dark .transaction-modal input,
+body.dark .transaction-modal select {
+  background-color: rgba(7, 11, 22, 0.72);
+}
+
+.transaction-modal input:focus,
+.transaction-modal select:focus,
+.transaction-tab:focus-visible,
+.modal-close:focus-visible {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.16);
+}
+
+select {
+  color-scheme: inherit;
+}
+
+.repayment-row.hidden {
+  display: none;
+}
+
+.table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap table {
+  min-width: 680px;
+}
+
+.budget-bar-card {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.budget-bar-card .bar-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.budget-bar-card .bar-track {
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.budget-bar-card .bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cyan), var(--blue), var(--violet));
+}
+
+.budget-bar-card.over .bar-fill {
+  background: linear-gradient(90deg, var(--yellow), var(--red));
+}
+
+@media (max-width: 760px) {
+  .main-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .main-nav .nav-item {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .month-picker {
+    width: 100%;
+  }
+
+  .month-picker select {
+    flex: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .floating-add-transaction {
+    right: 16px;
+    bottom: 16px;
+    width: 58px;
+    height: 58px;
+    min-height: 58px;
+  }
+
+  .transaction-form-grid,
+  .repayment-row {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .transaction-form-grid .full {
+    grid-column: auto;
+  }
+
+  .transaction-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-bar-card .bar-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-add-transaction {
+    transition: none;
+  }
+}
